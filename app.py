@@ -105,5 +105,48 @@ st.markdown(
 st.plotly_chart(bp.outcome_plot(), use_container_width=True)
 
 st.markdown("### Algorithmic fairness")
+st.markdown(
+    "Algorithmic fairness is an area of research concerned with how to correct biases in decisions made by machine "
+    "learning models. "
+    "The table below shows the features and resulting coefficients of a logistic regression classifier on whether to "
+    "conduct a search based on historical data."
+)
+st.dataframe(bp.get_coeffs())
+st.markdown(
+    "Popular definitions of algorithmic fairness include statistical parity and predictive equality. "
+    "The following sections will use these metrics to explore the classifier's fairness with respect to the "
+    "race of the stopped person."
+)
 
-# TODO Algorithmic fairness
+st.markdown("#### Statistical Parity")
+st.markdown(
+    "Statistical parity refers to when the proportion of searched people in each group is the same. "
+)
+st.markdown(
+    "When machine learning models are trained on biased data, those biases often become exacerbated, "
+    "as illustrated in the plots below."
+)
+clf_fig, actual_fig = bp.statistical_parity_plots()
+col1, col2 = st.columns(2)
+with col1:
+    st.plotly_chart(clf_fig, use_container_width=True)
+with col2:
+    st.plotly_chart(actual_fig, use_container_width=True)
+
+st.markdown("#### Predictive Equality")
+st.markdown(
+    "Predictive equality is achieved when the decision accuracy (e.g. false positive rate) is the same across "
+    "groups."
+)
+
+st.plotly_chart(bp.roc_plot(), use_container_width=True)
+
+st.markdown("##### Confusion Matrices")
+fig0, fig1, fig2, fig3 = bp.confusion_matrix_plots()
+col1, col2 = st.columns(2)
+with col1:
+    st.plotly_chart(fig0, use_container_width=True)
+    st.plotly_chart(fig1, use_container_width=True)
+with col2:
+    st.plotly_chart(fig2, use_container_width=True)
+    st.plotly_chart(fig3, use_container_width=True)

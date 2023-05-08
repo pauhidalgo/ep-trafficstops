@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import List
 
 import pandas as pd
+import sklearn.metrics
 import streamlit as st
 from abc import ABC
 from typing import List, Dict, Optional
@@ -12,6 +13,9 @@ import plotly.express as px
 import plotly.graph_objects as go
 from tokens import mapbox_token
 from collections import Counter
+from sklearn.linear_model import LogisticRegression
+import numpy as np
+from sklearn import metrics
 
 
 class BiasPlots(ABC):
@@ -19,11 +23,148 @@ class BiasPlots(ABC):
         self.data = data
         self.city = city
 
-        # Add indicator columns for each race
         self.data = self.data.loc[
             (~self.data["subject_race"].isna())
             & (~self.data["subject_race"].isin(["other", "unknown"]))
         ]
+
+        # Train a binary classifier based on past search decisions and outcomes
+        # Add indicator columns for each race category
+        self.races = [
+            "black",
+            "white",
+            "hispanic",
+            "asian/pacific islander",
+        ]
+        for race in self.races:
+            self.data[f"subject_is_{race}"] = self.data["subject_race"] == race
+
+        self.feature_cols = [
+            "hour",
+            "subject_age",
+        ]  # TODO add driver sex
+        self.feature_cols.extend([f"subject_is_{r}" for r in self.races])
+        self.pred_col = "contraband_found"  # TODO search_conducted
+
+        self.plot_data = self.data.loc[
+            :, self.feature_cols + [self.pred_col, "subject_race"]
+        ].dropna()
+        self.train_data = self.plot_data.drop(columns=["subject_race"])
+        for c in self.feature_cols:
+            self.train_data[c] = self.train_data[c].astype(int)
+
+        # TODO train test split
+        X, y = self.get_xy()
+        mod = LogisticRegression(random_state=0, class_weight="balanced")
+        self.mod = mod.fit(X, y)
+
+    def get_xy(self):
+        return self.train_data.loc[:, self.feature_cols].values, self.train_data[
+            self.pred_col
+        ].astype(int)
+
+    def get_coeffs(self):
+        params = pd.DataFrame(
+            dict(zip(self.feature_cols, self.mod.coef_[0])), index=["coefficients"]
+        )
+        return params
+
+    def statistical_parity_plots(self):
+        # Plot stacked bar chart of search decision proportions per race
+        X, y_true = self.get_xy()
+        plot_data = self.plot_data.copy()
+        plot_data["predict_yes"] = self.mod.predict(X)
+        plot_data["actual_yes"] = y_true
+
+        plot_data = (
+            plot_data.groupby("subject_race")[["predict_yes", "actual_yes"]]
+            .mean()
+            .reset_index()
+        )
+        for yes_col, no_col in [
+            ("predict_yes", "predict_no"),
+            ("actual_yes", "actual_no"),
+        ]:
+            plot_data[no_col] = 1 - plot_data[yes_col]
+        plot_data.sort_values(by=["subject_race"], inplace=True)
+
+        clf_fig = px.bar(
+            plot_data,
+            x="subject_race",
+            y=[
+                "predict_no",
+                "predict_yes",
+            ],
+            title="Search Decision Proportions by Race (Classifier)",
+        )
+        actual_fig = px.bar(
+            plot_data,
+            x="subject_race",
+            y=[
+                "actual_no",
+                "actual_yes",
+            ],
+            title="Search Decision Proportions by Race (Actual)",
+        )
+
+        return clf_fig, actual_fig
+
+    def roc_plot(self):
+        X, y_true = self.get_xy()
+        y_score = self.mod.decision_function(X)
+        plot_data = pd.DataFrame()
+        for race in self.races:
+            race_idx = self.plot_data["subject_race"] == race
+            fpr, tpr, _ = metrics.roc_curve(y_true[race_idx], y_score[race_idx])
+            df = pd.DataFrame()
+            df["False Positive Rate"] = fpr
+            df["True Positive Rate"] = tpr
+            df["race"] = race
+            plot_data = pd.concat([plot_data, df], ignore_index=True)
+
+        # Add special y = x case
+        df = pd.DataFrame()
+        df["False Positive Rate"] = [0, 0.5, 1]
+        df["True Positive Rate"] = [0, 0.5, 1]
+        df["race"] = "y=x"
+        plot_data = pd.concat([plot_data, df], ignore_index=True)
+
+        plot_data.sort_values(by=["False Positive Rate", "race"], inplace=True)
+
+        fig = px.line(
+            plot_data, x="False Positive Rate", y="True Positive Rate", color="race"
+        )
+        fig.update_layout(
+            showlegend=True,
+            title=f"ROC Curve",
+            yaxis_title="True Positive Rate",
+        )
+        return fig
+
+    def confusion_matrix_plots(self):
+        X, y_true = self.get_xy()
+        y_score = self.mod.predict(X)
+        figs = []
+        labels = ["Negative", "Positive"]
+        for race in self.races:
+            race_idx = self.plot_data["subject_race"] == race
+            cm = metrics.confusion_matrix(
+                y_true[race_idx], y_score[race_idx], normalize="all"
+            )
+            cm = np.around(cm, 2)
+            fig = px.imshow(
+                cm,
+                text_auto=True,
+                zmin=0,
+                zmax=1,
+                labels=dict(color="Proportion"),
+                x=["Predicted " + c for c in labels],
+                y=["Actual " + c for c in labels],
+                title=f"Subject Race = {race}",
+            )
+            fig.update_xaxes(side="top")
+            figs.append(fig)
+        return figs
 
     def benchmark_plot(self):
         plot_data = (
