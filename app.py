@@ -58,6 +58,20 @@ with st.sidebar:
     st.markdown(
         f"Data from the [Stanford Open Policing Project](https://openpolicing.stanford.edu/)"
     )
+    st.markdown("")
+    st.markdown("**References**")
+    st.markdown(
+        "Corbett-Davies, S., Pierson, E., Feller, A., Goel, S., & Huq, A. (2017, August). "
+        "Algorithmic decision making and the cost of fairness."
+    )
+    st.markdown(
+        "Pierson, E., Simoiu, C., Overgoor, J., Corbett-Davies, S., Jenson, D., Shoemaker, A., ... & Goel, "
+        "S. (2020). A large-scale analysis of racial disparities in police stops across the United States."
+    )
+    st.markdown(
+        "Simoiu, C., Corbett-Davies, S., & Goel, S. (2017). The problem of infra-marginality in outcome "
+        "tests for discrimination."
+    )
 
 st.markdown("## Data summary")
 tab1, tab2 = st.tabs(["**Geography**", "**Temporal Patterns**"])
@@ -106,19 +120,19 @@ st.markdown("### Algorithmic fairness")
 st.markdown(
     "Algorithmic fairness is an area of research concerned with how to correct biases in decisions made by machine "
     "learning models. "
-    "The table below shows the features and resulting coefficients of a logistic regression classifier on whether to "
-    "conduct a search based on historical data."
+    "The table below shows the features and resulting coefficients of a logistic regression classifier on whether a "
+    "search will find contraband based on historical data."
 )
 st.dataframe(bp.get_coeffs())
 st.markdown(
     "Popular definitions of algorithmic fairness include statistical parity and predictive equality. "
-    "The following sections will use these metrics to explore the classifier's fairness with respect to the "
-    "race of the stopped person."
+    "The following sections will apply these metrics to the training set to explore the classifier's fairness with "
+    "respect to the race of the stopped person."
 )
 
 st.markdown("#### Statistical Parity")
 st.markdown(
-    "Statistical parity refers to when the proportion of searched people in each group is the same. "
+    "Statistical parity refers to when the class proportions across groups are the same. "
 )
 st.markdown(
     "When machine learning models are trained on biased data, those biases often become exacerbated, "

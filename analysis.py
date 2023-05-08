@@ -88,8 +88,9 @@ class BiasPlots(ABC):
                 "predict_no",
                 "predict_yes",
             ],
-            title="Search Decision Proportions by Race (Classifier)",
+            title="Proportion of Searches Finding Contraband (Predicted)",
         )
+        clf_fig.update_layout(xaxis_title="Subject Race", yaxis_title="Proportion")
         actual_fig = px.bar(
             plot_data,
             x="subject_race",
@@ -97,8 +98,9 @@ class BiasPlots(ABC):
                 "actual_no",
                 "actual_yes",
             ],
-            title="Search Decision Proportions by Race (Actual)",
+            title="Proportion of Searches Finding Contraband (Actual)",
         )
+        actual_fig.update_layout(xaxis_title="Subject Race", yaxis_title="Proportion")
 
         return clf_fig, actual_fig
 
