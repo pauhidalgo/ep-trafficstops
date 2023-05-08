@@ -5,4 +5,5 @@ This project uses Poetry for dependency management. After installing the depende
 the code can be run (see https://python-poetry.org/docs/basic-usage/#installing-dependencies). 
 
 To run the Streamlit app in a local browser window, run `streamlit run app.py` in command line from the 
-`ep-trafficstops` directory. 
+`ep-trafficstops` directory. The app is also publicly available 
+[here](https://pauhidalgo-ep-trafficstops-app-e4ygyh.streamlit.app/). 
