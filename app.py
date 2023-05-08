@@ -1,12 +1,11 @@
 from datetime import datetime
-from typing import List
 
 import pandas as pd
 import streamlit as st
+
 from analysis import GeoPlots, TimePlots, BiasPlots
 
 cities = {
-    # "Louisville, KY": "ky_louisville_2023_01_26.csv",
     "New Orleans, LA": "la_new_orleans_2020_04_01.parquet",
     "San Antonio, TX": "tx_san_antonio_2023_01_26.parquet",
     "Vermont State Patrol": "vt_statewide_2020_04_01.parquet",
@@ -46,7 +45,7 @@ with st.sidebar:
     st.markdown("# Options")
     form = st.form("my_form")
     city = form.selectbox(
-        "Which city would you like to visualize?", list(cities.keys())
+        "Which location would you like to visualize?", list(cities.keys())
     )
     date_range = form.slider(
         "Date Range",
@@ -54,9 +53,6 @@ with st.sidebar:
         max_value=datetime(2023, 5, 1),
         value=(datetime(2005, 1, 1), datetime(2023, 5, 1)),
     )
-    # start_date = form.date_input("Start date",datetime(2005, 1, 1))
-    # end_date = form.date_input("Start date",datetime(2023, 5, 1))
-    # date_range = (start_date.to_datetime, end_date)
     form.form_submit_button("Analyze")
     plot_data = prep_data(city, date_range)
     st.markdown(
@@ -69,10 +65,12 @@ with tab1:
     st.markdown(
         "Traffic stops tend to concentrate in city centers and extend out along main roads:"
     )
-    # TODO uncomment
-    # gp = GeoPlots(plot_data, city)
-    # st.plotly_chart(gp.bubble_map(), use_container_width=True)
-    # st.plotly_chart(gp.scatter_map(), use_container_width=True)
+    gp = GeoPlots(plot_data, city)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.plotly_chart(gp.bubble_map(), use_container_width=True)
+    with col2:
+        st.plotly_chart(gp.scatter_map(), use_container_width=True)
 
 with tab2:
     st.markdown("The number of traffic stops made trends downwards over time: ")
@@ -96,9 +94,9 @@ st.plotly_chart(bp.benchmark_plot(), use_container_width=True)
 st.markdown("### Outcome test")
 st.markdown(
     "The outcome test specifically targets the 'hit rate' of searches, "
-    "e.g. whether contraband was found. "
+    "i.e. whether contraband was found. "
     "When searches for non-white drivers have lower hit rates compared to white drivers, this suggests officers tend "
-    "to search those groups with less evidence."
+    "to search those groups with less evidence. "
     "The search hit rates for hispanic drivers are often lower than for white drivers, suggesting hispanic drivers "
     "face increased discrimination."
 )
@@ -138,10 +136,26 @@ st.markdown(
     "Predictive equality is achieved when the decision accuracy (e.g. false positive rate) is the same across "
     "groups."
 )
+st.markdown("##### ROC Curve")
+st.markdown(
+    "The Receiver Operating Characteristic, or ROC curve, plots the true positive rate vs. the false "
+    "positive rate to indicate the performance of a classifier compared to random guessing "
+    "(indicated by the y = x line)."
+)
 
 st.plotly_chart(bp.roc_plot(), use_container_width=True)
 
 st.markdown("##### Confusion Matrices")
+st.markdown(
+    "Confusion matrices summarize the performance of a classifier as a contingency table of the actual "
+    "labels vs. what was predicted. "
+)
+st.markdown(
+    "The top right entry, for example, indicates the false positive rate: the proportion of cases that were "
+    "predicted to have contraband, but actually did not. "
+    "It is often the case that algorithms have higher false positive rates for minority groups, "
+    "such as black and hispanic drivers."
+)
 fig0, fig1, fig2, fig3 = bp.confusion_matrix_plots()
 col1, col2 = st.columns(2)
 with col1:

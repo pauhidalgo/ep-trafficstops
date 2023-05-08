@@ -1,21 +1,15 @@
-from datetime import datetime
-from typing import List
-
-import pandas as pd
-import sklearn.metrics
-import streamlit as st
-from abc import ABC
-from typing import List, Dict, Optional
 import calendar
-from sklearn.cluster import KMeans
-
-import plotly.express as px
-import plotly.graph_objects as go
-from tokens import mapbox_token
+from abc import ABC
 from collections import Counter
-from sklearn.linear_model import LogisticRegression
+
 import numpy as np
+import pandas as pd
+import plotly.express as px
 from sklearn import metrics
+from sklearn.cluster import KMeans
+from sklearn.linear_model import LogisticRegression
+
+from tokens import mapbox_token
 
 
 class BiasPlots(ABC):
@@ -42,9 +36,9 @@ class BiasPlots(ABC):
         self.feature_cols = [
             "hour",
             "subject_age",
-        ]  # TODO add driver sex
+        ]
         self.feature_cols.extend([f"subject_is_{r}" for r in self.races])
-        self.pred_col = "contraband_found"  # TODO search_conducted
+        self.pred_col = "contraband_found"
 
         self.plot_data = self.data.loc[
             :, self.feature_cols + [self.pred_col, "subject_race"]
@@ -53,7 +47,6 @@ class BiasPlots(ABC):
         for c in self.feature_cols:
             self.train_data[c] = self.train_data[c].astype(int)
 
-        # TODO train test split
         X, y = self.get_xy()
         mod = LogisticRegression(random_state=0, class_weight="balanced")
         self.mod = mod.fit(X, y)
@@ -122,7 +115,7 @@ class BiasPlots(ABC):
             df["race"] = race
             plot_data = pd.concat([plot_data, df], ignore_index=True)
 
-        # Add special y = x case
+        # Add special y = x case corresponding to random guessing performance
         df = pd.DataFrame()
         df["False Positive Rate"] = [0, 0.5, 1]
         df["True Positive Rate"] = [0, 0.5, 1]
@@ -136,7 +129,7 @@ class BiasPlots(ABC):
         )
         fig.update_layout(
             showlegend=True,
-            title=f"ROC Curve",
+            title=f"ROC Curves by Race",
             yaxis_title="True Positive Rate",
         )
         return fig
@@ -259,6 +252,9 @@ class GeoPlots(ABC):
         fig.update_layout(
             height=1000,
             title="Traffic Stops Scatter Plot",
+            legend=dict(
+                orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
+            ),
         )
         return fig
 
@@ -296,7 +292,7 @@ class TimePlots(ABC):
         )
         fig.update_layout(
             showlegend=True,
-            title="Traffic Stops over Time",
+            title="Average Daily Traffic Stops over Time",
             xaxis_title="Date",
             yaxis_title="Number of stops",
             legend=dict(
