@@ -9,7 +9,7 @@ from sklearn import metrics
 from sklearn.cluster import KMeans
 from sklearn.linear_model import LogisticRegression
 
-from tokens import mapbox_token
+import streamlit as st
 
 
 class BiasPlots(ABC):
@@ -209,7 +209,7 @@ class GeoPlots(ABC):
         self.data = self.data.loc[
             (~self.data["lat"].isna()) & (~self.data["lon"].isna())
         ]
-        px.set_mapbox_access_token(mapbox_token)
+        px.set_mapbox_access_token(st.secrets["mapbox_token"])
         self.mapbox_style = "light"
 
     def bubble_map(self):
